@@ -31,7 +31,8 @@ const IPOList: React.FC = () => {
       });
   }, []);
 
-  if (loading) return <p className="text-center">Loading IPOs...</p>;
+  if (loading) return <p className="text-center" style={{color : "rgb(21,39,51)"}}>Loading IPOs...</p>;
+  
   if (error) return <p className="text-red-500 text-center">Error: {error}</p>;
 
   return (
