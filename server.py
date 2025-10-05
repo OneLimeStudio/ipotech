@@ -1,10 +1,11 @@
 # server.py
+import os
+import time
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import time
 
 app = Flask(__name__)
 CORS(app)
@@ -14,13 +15,12 @@ HEADERS = {
     "Referer": "https://ipowatch.in/"
 }
 
-# simple in-memory cache to avoid hammering the site during development
-_cache = {"ts": 0, "data": None, "ttl": 60}  # ttl seconds
+# simple in-memory cache
+_cache = {"ts": 0, "data": None, "ttl": 60}  # ttl in seconds
 
 def parse_ipowatch_table(soup):
-    """Return list of dicts parsed from the table you pasted (column-1..column-5)."""
+    """Return list of dicts parsed from the IPO table."""
     results = []
-    # try the tbody class used in the HTML you pasted, fallback to first table
     tbody = soup.find("tbody", class_="row-striping row-hover")
     if not tbody:
         table = soup.find("table")
@@ -52,17 +52,13 @@ def parse_ipowatch_table(soup):
 @app.route("/api/ipos", methods=["GET"])
 def api_ipos():
     """
-    Query usage:
-      /api/ipos?url=https://ipowatch.in/your-page/
-      or
-      /api/ipos?url=local   <-- reads sample.html in this folder
+    Example query:
+      /api/ipos?url=https://ipowatch.in/
+      /api/ipos?url=local   <-- uses sample.html in this folder
     """
-    # url = request.args.get("url")
-    url = "https://ipowatch.in/"
-    if not url:
-        return jsonify({"error": "missing ?url= param. Use ?url=https://... or ?url=local"}), 400
+    url = request.args.get("url", "https://ipowatch.in/")
 
-    # use cache when scraping same URL repeatedly during dev
+    # Use cache to avoid repeated scraping
     now = time.time()
     if _cache["data"] and (now - _cache["ts"]) < _cache["ttl"]:
         return jsonify(_cache["data"])
@@ -80,9 +76,11 @@ def api_ipos():
         items = parse_ipowatch_table(soup)
         _cache.update({"ts": now, "data": items})
         return jsonify(items)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# if __name__ == "__main__":z
-print("Starting Flask server on http://127.0.0.1:5000")
-app.run(port=5000, debug=True)
+if __name__ == "__main__":
+    # Use Render's PORT environment variable if available
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
