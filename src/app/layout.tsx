@@ -3,7 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";   // 👈 Import here
 import IPOList from "@/components/IPOList";
 export const metadata: Metadata = {
-  title: "My Starter Next App",
+  title: "IPO_TECH",
   description: "Built with Next.js + TailwindCSS",
 };
 
